@@ -20,6 +20,7 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
 
     private val t1 = add(Point("t1", MAGENTA + SOLID, Vector2d(0.25, 1.0), false))
     private val t2 = add(Point("t2", MAGENTA + SOLID, Vector2d(0.75, 2.0), false))
+    private val l = add(Point("l", MAGENTA + SOLID, Vector2d(2.0, 1.0), false))
     private val s = add(Point("s", MAGENTA + SOLID, Vector2d(0.0, 0.0), false))
     private val p = add(Point("p", GREEN + SOLID, Vector2d(-3.0, -1.0), false))
     private val q = add(Point("q", GREEN + SOLID, Vector2d(3.0, 1.0), false))
@@ -189,6 +190,7 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
         updateBezier(ctx)
 
         t1.vec.y = 1.0
+        l.vec.y = 1.0
         t2.vec.y = 2.0
 
         if (gridVisible)
@@ -219,6 +221,7 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
         ce.enabled = false
         c.enabled = false
         r.enabled = false
+        l.enabled = false
 
         var radius = r.vec.distance(c.vec)
         when (mode) {
@@ -271,6 +274,10 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
                 ctx.begin()
                 ctx.circle(c.xf(), c.yf(), radius.toFloat())
                 ctx.stroke(2f, BLUE + SOLID)
+            }
+
+            BezierTest.sample_length -> {
+                l.enabled = true
             }
 
             else -> {
@@ -699,6 +706,16 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
                 ctx.drawHudText(t, ctx.windowW() - 20f, 20f, SOLID + WHITE, 15f)
 
                 ctx.textAlign(AlignX.CENTER, AlignY.MIDDLE)
+            }
+
+            BezierTest.sample_length -> {
+                val t = bezier.sampleLength(l.vec.x)
+                if (t >= 0) {
+                    val x = bezier.x(t)
+                    val y = bezier.y(t)
+
+                    ctx.drawPointCircle(x.toFloat(), y.toFloat(), SOLID + WHITE, 10f)
+                }
             }
         }
 

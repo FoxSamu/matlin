@@ -28,6 +28,7 @@ The following operations are done purely algebraically: no iterative algorithm i
 
 The following operations are impossible to be done algebraically and are computed using an iterative algorithm that numerically approaches the solution we are looking for. Only for linear curves does the situation simplify to simple linear algebra and can it be solved algebraically.
 - Computing the length of the curve.
+- Computing the point at a certain length along the curve.
 - Computing the intersections between two curves.
 - Computing the intersections between a curve and a circle.
 - Computing the the point on the curve with least distance to some point.

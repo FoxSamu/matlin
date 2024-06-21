@@ -21,5 +21,6 @@ enum class BezierTest {
     intersect_cubic,
     cut_at_extrema,
     nearest_point,
-    intersect_circle
+    intersect_circle,
+    sample_length
 }
