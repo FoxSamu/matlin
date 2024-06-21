@@ -4,7 +4,10 @@ import dev.runefox.matlin.*
 import net.shadew.geotest.*
 import org.joml.Vector2d
 import org.lwjgl.glfw.GLFW
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
 
 abstract class BezierScene : DraggablePointsScene(), KeyDown {
@@ -29,6 +32,9 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
     private val ca = add(Point("A", CYAN + SOLID, Vector2d(-1.0, -2.0), false))
     private val cb = add(Point("B", CYAN + SOLID, Vector2d(1.0, 2.0), false))
     private val ce = add(Point("E", CYAN + SOLID, Vector2d(3.0, -1.0), false))
+
+    private val c = add(Point("C", CYAN + SOLID, Vector2d(0.0, -1.0), false))
+    private val r = add(Point("R", CYAN + SOLID, Vector2d(1.5, 0.0), false))
 
     var mode = BezierTest.none
 
@@ -142,6 +148,33 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
         ctx.stroke(2f, col)
     }
 
+
+    fun circIsc(ctx: GeometryContext, t: Double, x: Double, y: Double, angle: Double, c: Vector2d, r: Double) {
+        ctx.drawPointCircle(
+            x.toFloat(),
+            y.toFloat(),
+            WHITE + SOLID,
+            10f
+        )
+
+        val sin = sin(angle) * r
+        val cos = cos(angle) * r
+
+        ctx.drawSegment(c.x.toFloat(), c.y.toFloat(), (c.x + cos).toFloat(), (c.y + sin).toFloat(), RED + TRANSPARENT, 2f)
+
+        var deg = angle/ PI *180
+        if (deg > 359.951f)
+            deg = 0.0
+
+        val text = "%.1f°".format(deg)
+        ctx.drawTextBg(text, (c.x + cos/2).toFloat(), (c.y + sin/2).toFloat(), 0f, 0f, TRANSPARENT, 12f, 4f, 2f)
+        ctx.drawText(text, (c.x + cos/2).toFloat(), (c.y + sin/2).toFloat(), 0f, 0f, RED + SOLID, 12f)
+
+        val text2 = "%.3f".format(t)
+        ctx.drawTextBg(text2, (c.x + cos).toFloat(), (c.y + sin).toFloat(), 0f, 15f, TRANSPARENT, 12f, 4f, 2f)
+        ctx.drawText(text2, (c.x + cos).toFloat(), (c.y + sin).toFloat(), 0f, 15f, WHITE + SOLID, 12f)
+    }
+
     override fun init(ctx: GeometryContext) {
         super.init(ctx)
         ctx.onKeyDown(this)
@@ -184,6 +217,10 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
         ca.enabled = false
         cb.enabled = false
         ce.enabled = false
+        c.enabled = false
+        r.enabled = false
+
+        var radius = r.vec.distance(c.vec)
         when (mode) {
             BezierTest.cut -> {
                 t1.enabled = true
@@ -225,6 +262,15 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
                     ce.vec.x, ce.vec.y
                 )
                 drawCub(ctx, CYAN)
+            }
+
+            BezierTest.intersect_circle -> {
+                c.enabled = true
+                r.enabled = true
+
+                ctx.begin()
+                ctx.circle(c.xf(), c.yf(), radius.toFloat())
+                ctx.stroke(2f, BLUE + SOLID)
             }
 
             else -> {
@@ -609,8 +655,7 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
                     CYAN
                 )
 
-                var i = 0
-                for (c in spline) {
+                for ((i, c) in spline.withIndex()) {
                     when (c) {
                         is Linear -> {
                             lin.set(c)
@@ -625,7 +670,6 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
                             drawCub(ctx, colours[i])
                         }
                     }
-                    i ++
                 }
             }
 
@@ -636,6 +680,25 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
 
                 ctx.drawSegment(x, y, s.xf(), s.yf(), GREEN + TRANSPARENT, 2f)
                 ctx.drawPointCircle(x, y, RED + SOLID, 8f)
+            }
+
+            BezierTest.intersect_circle -> {
+                val iscs = Intersections()
+                bezier.intersectCircle(c.vec.x, c.vec.y, radius, iscs)
+
+                for ((t, angle, x, y) in iscs) {
+                    circIsc(ctx, t, x, y, angle, c.vec, radius)
+                }
+
+                val n = iscs.size
+                val t = "$n intersection points"
+
+                ctx.textAlign(AlignX.RIGHT, AlignY.TOP)
+
+                ctx.drawHudTextBg(t, ctx.windowW() - 20f, 20f, TRANSPARENT, 15f, 5f, 3f)
+                ctx.drawHudText(t, ctx.windowW() - 20f, 20f, SOLID + WHITE, 15f)
+
+                ctx.textAlign(AlignX.CENTER, AlignY.MIDDLE)
             }
         }
 
@@ -651,7 +714,7 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
 
     override fun drawHud(ctx: GeometryContext) {
         if (mode == BezierTest.none) {
-            var t = "Drag points around. Hold CTRL to snap to integer coordinates.\n" +
+            val t = "Drag points around. Hold CTRL to snap to integer coordinates.\n" +
                 "To zoom, scroll or drag with ALT. Alternatively, use CTRL = or CTRL -.\n" +
                 "To pan, drag using the middle mouse button or while holding SHIFT.\n" +
                 "Press T to open the command line to change test or curve type.\n" +

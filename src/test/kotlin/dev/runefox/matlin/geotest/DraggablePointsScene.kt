@@ -24,6 +24,16 @@ abstract class DraggablePointsScene : GeomScene(), MouseDown, MouseUp {
         return point
     }
 
+    protected fun moveToBack(point: Point) {
+        if (points.remove(point))
+            points.add(0, point)
+    }
+
+    protected fun moveToFront(point: Point) {
+        if (points.remove(point))
+            points.add(point)
+    }
+
     override fun init(ctx: GeometryContext) {
         ctx.onMouseDown(this)
         ctx.onMouseUp(this)

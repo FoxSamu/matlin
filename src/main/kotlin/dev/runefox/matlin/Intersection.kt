@@ -14,6 +14,7 @@ data class Intersection(
 
     /**
      * The interpolation factor of the second curve at which the intersection happened.
+     * In case of a circle, this is the angle of the circle.
      */
     var u: Double = 0.0,
 

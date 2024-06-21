@@ -1,5 +1,6 @@
 package dev.runefox.matlin.geotest
 
+@Suppress("EnumEntryName")
 enum class BezierTest {
     none,
     evaluation,
@@ -19,5 +20,6 @@ enum class BezierTest {
     intersect_quadratic,
     intersect_cubic,
     cut_at_extrema,
-    nearest_point
+    nearest_point,
+    intersect_circle
 }

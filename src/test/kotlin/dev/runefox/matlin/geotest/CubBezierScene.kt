@@ -17,6 +17,9 @@ class CubBezierScene : BezierScene() {
 
     var dragT = 0.0
     val m = add(Point(null, SOLID + MAGENTA, Vector2d(), false))
+    init {
+        moveToBack(m)
+    }
 
     val s = add(Point("S", SOLID + YELLOW, Vector2d(bezier.sx, bezier.sy)))
     val a = add(Point("A", SOLID + YELLOW, Vector2d(bezier.ax, bezier.ay)))
