@@ -228,6 +228,24 @@ data class Cubic(
     override val y2 get() = tbay - tasy
     override val y3 get() = ey - sy - tbay
 
+    override val xPolynomial = CubicPolynomial()
+        get() = field.apply {
+            a0 = x0
+            a1 = x1
+            a2 = x2
+            a3 = x3
+        }
+
+    override val yPolynomial = CubicPolynomial()
+        get() = field.apply {
+            a0 = y0
+            a1 = y1
+            a2 = y2
+            a3 = y3
+        }
+
+
+
     override fun x(t: Double): Double {
         val sx = sx // Make local for faster access
         val tba = tbax
@@ -402,6 +420,39 @@ data class Cubic(
             end.by = qy
             end.ex = ex
             end.ey = ey
+        }
+    }
+
+    fun through4Points(
+        x1: Double, y1: Double, t1: Double,
+        x2: Double, y2: Double, t2: Double,
+        x3: Double, y3: Double, t3: Double,
+        x4: Double, y4: Double, t4: Double,
+    ) {
+        solveLinearSystem(
+            (1-t1)*(1-t1)*(1-t1), 3*(1-t1)*(1-t1)*t1, 3*(1-t1)*t1*t1, t1*t1*t1,
+            (1-t2)*(1-t2)*(1-t2), 3*(1-t2)*(1-t2)*t2, 3*(1-t2)*t2*t2, t2*t2*t2,
+            (1-t3)*(1-t3)*(1-t3), 3*(1-t3)*(1-t3)*t3, 3*(1-t3)*t3*t3, t3*t3*t3,
+            (1-t4)*(1-t4)*(1-t4), 3*(1-t4)*(1-t4)*t4, 3*(1-t4)*t4*t4, t4*t4*t4,
+            x1, x2, x3, x4
+        ) { u1, u2, u3, u4 ->
+            sx = u1
+            ax = u2
+            bx = u3
+            ex = u4
+        }
+
+        solveLinearSystem(
+            (1-t1)*(1-t1)*(1-t1), 3*(1-t1)*(1-t1)*t1, 3*(1-t1)*t1*t1, t1*t1*t1,
+            (1-t2)*(1-t2)*(1-t2), 3*(1-t2)*(1-t2)*t2, 3*(1-t2)*t2*t2, t2*t2*t2,
+            (1-t3)*(1-t3)*(1-t3), 3*(1-t3)*(1-t3)*t3, 3*(1-t3)*t3*t3, t3*t3*t3,
+            (1-t4)*(1-t4)*(1-t4), 3*(1-t4)*(1-t4)*t4, 3*(1-t4)*t4*t4, t4*t4*t4,
+            y1, y2, y3, y4
+        ) { u1, u2, u3, u4 ->
+            sy = u1
+            ay = u2
+            by = u3
+            ey = u4
         }
     }
 }

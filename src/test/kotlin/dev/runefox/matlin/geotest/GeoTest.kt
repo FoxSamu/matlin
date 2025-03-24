@@ -33,6 +33,8 @@ class GeoTest : GeometryTest(), CommandHandler {
             BezierType.linear -> LinBezierScene()
             BezierType.quadratic -> QuadBezierScene()
             BezierType.cubic -> CubBezierScene()
+            BezierType.quadratic_through_points -> QuadBezierThruPtsScene()
+            BezierType.cubic_through_points -> CubBezierThruPtsScene()
             null -> scene
         }
         nscene.mode = mode

@@ -94,7 +94,7 @@ inline fun solveCubic(a: Double, b: Double, c: Double, d: Double, result: (Doubl
     if (a != 0.0 && d == 0.0) {
         // Special case, as d = 0 we have:
         // ax^3 + bx^2 + cx = 0
-        // Take x out of parentheses
+        // Extract x:
         // (ax^2 = bx + c)x = 0
 
         // So x = 0 is a solution, and the solutions of (ax^2 = bx + c) = 0 are solutions
@@ -116,13 +116,46 @@ inline fun solveCubic(a: Double, b: Double, c: Double, d: Double, result: (Doubl
 
 
 
-    // This is where it gets really dark
-
-    // We need to compute a depressed cubic, i.e. one without a quadratic term.
-    // We do this by a change of variable: t = x + b/3a.
+    // This is where we need to be more clever
     //
-    // We get the following polynomial:
-    // t^3 + pt + q
+    // Using a change of variable, we can rewrite the cubic into one without a quadratic term.
+    // We do this by creating a polynomial of t, where t = x + b/3a. We find this by
+    // substibuting x = t - b/3a into the equation:
+    //           ax^3 + bx^2 + cx + d = 0
+    //     ===   a(t - b/3a)^3 + b(t - b/3a)^2 + c(t - b/3a) + d = 0
+    //     ===   a(t^3 - 3bt^2/3a + 3b^2t/9a^2 - b^3/27a^3)
+    //         + b(t^2 - 2bt/3a + b^2/9a^2)
+    //         + c(t - b/3a)
+    //         + d = 0
+    //     ===   at^3 - bt^2 + b^2t/3a - b^3/27a^2
+    //         + bt^2 - 2b^2t/3a + b^3/9a^2
+    //         + ct - bc/3a
+    //         + d = 0
+    //     ===   at^3
+    //         - bt^2 + bt^2
+    //         + b^2t/3a - 2b^2t/3a + ct
+    //         - b^3/27a^2 + b^3/9a^2 - bc/3a + d = 0
+    //     ===   at^3
+    //         + (- b + b) t^2
+    //         + (- b^2/3a + c) t
+    //         + (2b^3/27a^2 - bc/3a + d) = 0
+    //     ===   at^3
+    //         + (- b^2/3a + c) t
+    //         + (2b^3/27a^2 - bc/3a + d) = 0
+    //     ===   at^3
+    //         + t (3ac - b^2)/3a
+    //         + (2b^3 - 9abc + 27a^2d)/27a^2 = 0
+    //     ===   t^3
+    //         + t (3ac - b^2)/3a^2
+    //         + (2b^3 - 9abc + 27a^2d)/27a^3 = 0
+    //
+    // Substitute p = (3ac - b^2)/3a^2 and q = (2b^3 - 9abc + 27a^2d)/27a^3, and we get:
+    //     t^3 + pt + q = 0
+    //
+    // This is a depressed cubic equation. We can use Cardano's method to solve this.
+    // Once we have the solutions t1, t2, t3, we can use x = t + b/3a to find the solutions
+    // of the original cubic.
+
     val p: Double
     val q: Double
 
@@ -141,7 +174,7 @@ inline fun solveCubic(a: Double, b: Double, c: Double, d: Double, result: (Doubl
     } else {
         // Bully the cubic until it's depressed
 
-        // t = x + b/3a
+        // t = x - b/3a
         val ac = a * c
         val abc = ac * b
 
@@ -157,7 +190,7 @@ inline fun solveCubic(a: Double, b: Double, c: Double, d: Double, result: (Doubl
     }
 
 
-    // Now we can use Cardan's method to solve the depressed cubic.
+    // Now we can use Cardano's method to solve the depressed cubic.
 
     val p3 = p * p * p
     val q2 = q * q
@@ -166,9 +199,10 @@ inline fun solveCubic(a: Double, b: Double, c: Double, d: Double, result: (Doubl
 
     val e = (q2 / 4) + (p3 / 27)
 
-    // Calculate s = sqrt(e)
+    // Let s = sqrt(e)
+
     if (abs(e) < 1e-20) {
-        // s = 0 (somewhat): we have 1 root
+        // e = s = 0, so we have 1 root
 
         val v = cbrt(-qh)
         val t =
@@ -178,10 +212,10 @@ inline fun solveCubic(a: Double, b: Double, c: Double, d: Double, result: (Doubl
         return 1
     }
 
-    if (e >= 0) {
-        // s is real: we have 1 root
+    if (e > 0) {
+        // e > 0, so s is real and we have 1 root
 
-        // What we'll get is that |sqrt(e)| = qh so v will become 0 while it shouldn't when qh > 0.
+        // What will happen is that |sqrt(e)| = qh so v will become 0 while it shouldn't when qh > 0.
         // We can simply flip the sign of the square root to fix this.
         val sqrte =
             if (qh > 0) -sqrt(e)
@@ -195,7 +229,10 @@ inline fun solveCubic(a: Double, b: Double, c: Double, d: Double, result: (Doubl
         return 1
     }
 
-    // s is imaginary: we have 3 roots
+    // This is where things get really really dark:
+    // s is imaginary
+
+    // This means that there are 3 roots, and we need to do complex numbers.
 
     // Prelude:
     // hsqrt3 = sqrt(3) / 2

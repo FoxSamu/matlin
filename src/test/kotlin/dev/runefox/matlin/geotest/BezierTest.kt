@@ -22,5 +22,13 @@ enum class BezierTest {
     cut_at_extrema,
     nearest_point,
     intersect_circle,
-    sample_length
+    sample_length,
+    inflection,
+    max_curvature,
+    subtract_curves,
+    find_cusp,
+    offset_lut,
+    curvature,
+    arcapprox,
+    offset
 }

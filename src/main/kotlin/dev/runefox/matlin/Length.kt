@@ -4,7 +4,7 @@ import kotlin.math.sqrt
 
 const val defThreshold = 0.000001
 
-private fun Bezier.linearLength(): Double {
+internal fun Bezier.linearLength(): Double {
     val dx = ex - sx
     val dy = ey - sy
 

@@ -101,3 +101,18 @@ fun Cubic.cutAtExtrema(out: MutableList<Cubic> = mutableListOf()): MutableList<C
 
     return out
 }
+
+
+/**
+ * Cuts this curve at its extrema. Extrema are where the curve's derivative is either horizontal or vertical. This cuts
+ * the curve in such a way that each subdivision has a bounding box with the start and end of the curve hitting the
+ * corner of the bounding box.
+ */
+@Suppress("UNCHECKED_CAST")
+fun Bezier.cutAtExtrema(out: MutableList<Bezier> = mutableListOf()): MutableList<Bezier> {
+    return when(this) {
+        is Linear -> cutAtExtrema(out as MutableList<Linear>) as MutableList<Bezier>
+        is Quadratic -> cutAtExtrema(out as MutableList<Quadratic>) as MutableList<Bezier>
+        is Cubic -> cutAtExtrema(out as MutableList<Cubic>) as MutableList<Bezier>
+    }
+}

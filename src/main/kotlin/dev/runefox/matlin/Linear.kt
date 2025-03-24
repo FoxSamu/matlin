@@ -61,6 +61,18 @@ data class Linear(
     override val y2 get() = 0.0
     override val y3 get() = 0.0
 
+    override val xPolynomial = LinearPolynomial()
+        get() = field.apply {
+            a0 = x0
+            a1 = x1
+        }
+
+    override val yPolynomial = LinearPolynomial()
+        get() = field.apply {
+            a0 = y0
+            a1 = y1
+        }
+
     override fun x(t: Double) = (ex - sx) * t + sx
     override fun y(t: Double) = (ey - sy) * t + sy
 
@@ -137,6 +149,29 @@ data class Linear(
             end.sy = y
             end.ex = ex
             end.ey = ey
+        }
+    }
+
+    fun through2Points(
+        x1: Double, y1: Double, t1: Double,
+        x2: Double, y2: Double, t2: Double
+    ) {
+        solveLinearSystem(
+            1-t1, t1,
+            1-t2, t2,
+            x1, x2,
+        ) { u1, u2 ->
+            sx = u1
+            ey = u2
+        }
+
+        solveLinearSystem(
+            1-t1, t1,
+            1-t2, t2,
+            y1, y2,
+        ) { u1, u2 ->
+            sy = u1
+            ey = u2
         }
     }
 }

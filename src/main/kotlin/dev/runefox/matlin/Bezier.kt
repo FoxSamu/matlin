@@ -84,6 +84,16 @@ sealed interface Bezier {
     val y3: Double
 
     /**
+     * A [Polynomial] that represents the X coordinate of this curve.
+     */
+    val xPolynomial: Polynomial
+
+    /**
+     * A [Polynomial] that represents the Y coordinate of this curve.
+     */
+    val yPolynomial: Polynomial
+
+    /**
      * Returns whether this curve can be a quadratic Bézier curve. This returns true if and only if both [x3] and [y3]
      * are 0 - that is, both parameters of the curve are quadratic polynomials.
      */

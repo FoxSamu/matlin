@@ -2,6 +2,22 @@ package dev.runefox.matlin
 
 import kotlin.math.*
 
+inline fun angularBisector(
+    ax: Double, ay: Double,
+    bx: Double, by: Double,
+    res: (Double, Double) -> Unit
+) {
+    val alen = sqrt(ax * ax + ay * ay)
+    val blen = sqrt(bx * bx + by * by)
+
+    val anx = ax / alen
+    val any = ay / alen
+    val bnx = bx / blen
+    val bny = by / blen
+
+    res(lerp(anx, bnx, 0.5), lerp(any, bny, 0.5))
+}
+
 inline fun intersectLines(
     ax: Double,
     ay: Double,

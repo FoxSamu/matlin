@@ -106,6 +106,20 @@ data class Quadratic(
     override val y2 get() = ey + sy - ay * 2
     override val y3 get() = 0.0
 
+    override val xPolynomial = QuadraticPolynomial()
+        get() = field.apply {
+            a0 = x0
+            a1 = x1
+            a2 = x2
+        }
+
+    override val yPolynomial = QuadraticPolynomial()
+        get() = field.apply {
+            a0 = y0
+            a1 = y1
+            a2 = y2
+        }
+
     override fun x(t: Double): Double {
         val dx = ax * 2
         val sx = sx // Make it local for faster access
@@ -252,6 +266,34 @@ data class Quadratic(
             end.ay = lerp(ay, ey, t)
             end.ex = ex
             end.ey = ey
+        }
+    }
+
+    fun through3Points(
+        x1: Double, y1: Double, t1: Double,
+        x2: Double, y2: Double, t2: Double,
+        x3: Double, y3: Double, t3: Double,
+    ) {
+        solveLinearSystem(
+            (1-t1)*(1-t1), 2*(1-t1)*t1, t1*t1,
+            (1-t2)*(1-t2), 2*(1-t2)*t2, t2*t2,
+            (1-t3)*(1-t3), 2*(1-t3)*t3, t3*t3,
+            x1, x2, x3
+        ) { u1, u2, u3 ->
+            sx = u1
+            ax = u2
+            ex = u3
+        }
+
+        solveLinearSystem(
+            (1-t1)*(1-t1), 2*(1-t1)*t1, t1*t1,
+            (1-t2)*(1-t2), 2*(1-t2)*t2, t2*t2,
+            (1-t3)*(1-t3), 2*(1-t3)*t3, t3*t3,
+            y1, y2, y3
+        ) { u1, u2, u3 ->
+            sy = u1
+            ay = u2
+            ey = u3
         }
     }
 }

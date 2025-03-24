@@ -4,10 +4,7 @@ import dev.runefox.matlin.*
 import net.shadew.geotest.*
 import org.joml.Vector2d
 import org.lwjgl.glfw.GLFW
-import kotlin.math.PI
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.sin
+import kotlin.math.*
 
 
 abstract class BezierScene : DraggablePointsScene(), KeyDown {
@@ -59,7 +56,7 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
         ctx.drawHudText(error, ctx.windowW() / 2, ctx.windowH() / 2, RED + SOLID, 20f)
     }
 
-    private fun drawLin(ctx: GeometryContext, col: Int) {
+    private fun drawLin(ctx: GeometryContext, col: Int, lin: Linear = this.lin) {
         ctx.begin()
         ctx.moveTo(lin.sx.toFloat(), lin.sy.toFloat())
         ctx.lineTo(lin.ex.toFloat(), lin.ey.toFloat())
@@ -69,7 +66,7 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
         ctx.drawPointCircle(lin.ex.toFloat(), lin.ey.toFloat(), col + SOLID, 6f)
     }
 
-    private fun drawQuad(ctx: GeometryContext, col: Int) {
+    private fun drawQuad(ctx: GeometryContext, col: Int, quad: Quadratic = this.quad) {
         ctx.begin()
         ctx.moveTo(quad.sx.toFloat(), quad.sy.toFloat())
         ctx.quadTo(quad.ax.toFloat(), quad.ay.toFloat(), quad.ex.toFloat(), quad.ey.toFloat())
@@ -86,7 +83,7 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
         ctx.drawPointCircle(quad.ex.toFloat(), quad.ey.toFloat(), col + SOLID, 6f)
     }
 
-    private fun drawCub(ctx: GeometryContext, col: Int) {
+    private fun drawCub(ctx: GeometryContext, col: Int, cub: Cubic = this.cub) {
         ctx.begin()
         ctx.moveTo(cub.sx.toFloat(), cub.sy.toFloat())
         ctx.cubicTo(
@@ -147,6 +144,16 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
             }
         }
         ctx.stroke(2f, col)
+    }
+
+    fun drawSpline(ctx: GeometryContext, col: Int, spline: MutableList<in Bezier>) {
+        for (curve in spline) {
+            when (curve) {
+                is Linear -> drawLin(ctx, col, curve)
+                is Quadratic -> drawQuad(ctx, col, curve)
+                is Cubic -> drawCub(ctx, col, curve)
+            }
+        }
     }
 
 
@@ -278,6 +285,21 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
 
             BezierTest.sample_length -> {
                 l.enabled = true
+            }
+
+            BezierTest.subtract_curves -> {
+                cs.enabled = true
+                ca.enabled = true
+                cb.enabled = true
+                ce.enabled = true
+
+                cub.set(
+                    cs.vec.x, cs.vec.y,
+                    ca.vec.x, ca.vec.y,
+                    cb.vec.x, cb.vec.y,
+                    ce.vec.x, ce.vec.y
+                )
+                drawCub(ctx, CYAN)
             }
 
             else -> {
@@ -715,6 +737,234 @@ abstract class BezierScene : DraggablePointsScene(), KeyDown {
                     val y = bezier.y(t)
 
                     ctx.drawPointCircle(x.toFloat(), y.toFloat(), SOLID + WHITE, 10f)
+                }
+            }
+
+            BezierTest.inflection -> {
+                when (val bez = bezier) {
+                    is Linear -> Unit
+                    is Quadratic -> Unit
+                    is Cubic -> bez.inflections { t ->
+                        val x = bezier.x(t)
+                        val y = bezier.y(t)
+
+                        ctx.drawPointCircle(x.toFloat(), y.toFloat(), SOLID + WHITE, 10f)
+                    }
+                }
+            }
+
+            BezierTest.max_curvature -> {
+                when (val bez = bezier) {
+                    is Linear -> Unit
+                    is Quadratic -> Unit
+                    is Cubic -> bez.curvatureExtrema { t ->
+                        val x = bezier.x(t)
+                        val y = bezier.y(t)
+
+                        ctx.drawPointCircle(x.toFloat(), y.toFloat(), SOLID + WHITE, 10f)
+                    }
+                }
+            }
+
+            BezierTest.find_cusp -> {
+                when (val bez = bezier) {
+                    is Linear -> {}
+                    is Quadratic -> {
+                        bez.derive(lin)
+                        drawLin(ctx, RED)
+                    }
+
+                    is Cubic -> {
+                        bez.derive(quad)
+                        drawQuad(ctx, RED)
+                    }
+                }
+
+                bezier.findCusps { t ->
+                    val x = bezier.x(t)
+                    val y = bezier.y(t)
+
+                    ctx.drawPointCircle(x.toFloat(), y.toFloat(), SOLID + WHITE, 10f)
+                }
+            }
+
+            BezierTest.subtract_curves -> {
+                when (val bez = bezier) {
+                    is Linear -> Unit
+                    is Quadratic -> Unit
+                    is Cubic -> bez.curvatureExtrema { t ->
+                        val c = Cubic(
+                            bez.sx - cub.sx,
+                            bez.sy - cub.sy,
+                            bez.ax - cub.ax,
+                            bez.ay - cub.ay,
+                            bez.bx - cub.bx,
+                            bez.by - cub.by,
+                            bez.ex - cub.ex,
+                            bez.ey - cub.ey
+                        )
+
+                        drawCub(ctx, SOLID + RED, c)
+                    }
+                }
+            }
+
+            BezierTest.offset_lut -> {
+                for (i in 0..60) {
+                    val t = i / 60.0
+
+                    val dx = bezier.dx(t)
+                    val dy = bezier.dy(t)
+                    val dl = sqrt(dx*dx + dy*dy)
+
+                    val x = bezier.x(t)
+                    val y = bezier.y(t)
+
+                    val nx = -dy / dl
+                    val ny = dx / dl
+
+                    val ox = x + nx
+                    val oy = y + ny
+                    val ox2 = x - nx
+                    val oy2 = y - ny
+
+                    ctx.drawPointCircle(ox.toFloat(), oy.toFloat(), SOLID + WHITE, 3f)
+                    ctx.drawPointCircle(ox2.toFloat(), oy2.toFloat(), SOLID + WHITE, 3f)
+                }
+            }
+
+            BezierTest.curvature -> {
+                for (i in 0..60) {
+                    val t = i / 60.0
+
+                    val dx = bezier.dx(t)
+                    val dy = bezier.dy(t)
+                    val dl = sqrt(dx*dx + dy*dy)
+
+                    val ddx = bezier.ddx(t)
+                    val ddy = bezier.ddy(t)
+
+                    val kappa = (dx * ddy - dy * ddx) / (dx * dx + dy * dy).pow(1.5)
+
+                    val x = bezier.x(t)
+                    val y = bezier.y(t)
+
+                    val nx = -dy / dl
+                    val ny = dx / dl
+
+                    val cx = x + nx * kappa
+                    val cy = y + ny * kappa
+
+                    ctx.drawPointCircle(cx.toFloat(), cy.toFloat(), SOLID + WHITE, 3f)
+
+                    val ox = x + nx
+                    val oy = y + ny
+                    val ox2 = x - nx
+                    val oy2 = y - ny
+
+                    ctx.drawPointCircle(ox.toFloat(), oy.toFloat(), SOLID + WHITE, 3f)
+                    ctx.drawPointCircle(ox2.toFloat(), oy2.toFloat(), SOLID + WHITE, 3f)
+                }
+            }
+
+            BezierTest.arcapprox -> {
+                when (val b = bezier) {
+                    is Linear -> cub.setLinear(b)
+                    is Quadratic -> cub.setQuadratic(b)
+                    is Cubic -> cub.set(b)
+                }
+                with(cub) {
+                    val rx = ex - sx
+                    val ry = ey - sy
+                    val rl = sqrt(rx * rx + ry * ry)
+
+                    val px = ax - sx
+                    val py = ay - sy
+                    val pl = sqrt(px * px + py * py)
+
+                    val qx = bx - ex
+                    val qy = by - ey
+                    val ql = sqrt(qx * qx + qy * qy)
+
+                    val rnx = rx / rl
+                    val rny = ry / rl
+
+                    val pnx = px / pl
+                    val pny = py / pl
+
+                    val qnx = qx / ql
+                    val qny = qy / ql
+
+                    val psx = lerp(rnx, pnx, 0.5)
+                    val psy = lerp(rny, pny, 0.5)
+
+                    val qsx = lerp(-rnx, qnx, 0.5)
+                    val qsy = lerp(-rny, qny, 0.5)
+
+                    val snx = -rny
+                    val sny = rnx
+
+                    intersectLines(sx, sy, sx + psx, sy + psy, ex, ey, ex + qsx, ey + qsy) { u, v ->
+                        if (u < 0 || v < 0) {
+                            // return false
+                        } else {
+                            val ix = lerp(sx, sx + psx, u)
+                            val iy = lerp(sy, sy + psy, u)
+
+                            val isx = ix - sx
+                            val isy = iy - sy
+
+                            val iex = ix - ex
+                            val iey = iy - ey
+
+                            ctx.drawPointCircle(ix.toFloat(), iy.toFloat(), SOLID + WHITE, 6f)
+                            ctx.drawSegment(sx.toFloat(), sy.toFloat(), ix.toFloat(), iy.toFloat(), SOLID + WHITE, 2f)
+                            ctx.drawSegment(ex.toFloat(), ey.toFloat(), ix.toFloat(), iy.toFloat(), SOLID + WHITE, 2f)
+                        }
+                    }
+//
+//                    intersectLines(sx, sy, sx + psx, sy + psy, ex, ey, bx, by) { u, v ->
+//                        if (u < 0 || v < 0) {
+//                            // return false
+//                        } else {
+//                            val ix = lerp(ex, bx, v)
+//                            val iy = lerp(ey, by, v)
+//
+//                            ctx.drawPointCircle(ix.toFloat(), iy.toFloat(), SOLID + WHITE, 6f)
+//                            ctx.drawSegment(sx.toFloat(), sy.toFloat(), ix.toFloat(), iy.toFloat(), SOLID + WHITE, 2f)
+//                        }
+//                    }
+                }
+            }
+
+            BezierTest.offset -> {
+                val off = bezier.offset(1.0)
+                drawSpline(ctx, SOLID + WHITE, off)
+
+                for (curve in off) {
+                    val c1 = when (val bez = bezier) {
+                        is Linear -> Cubic().apply{ setLinear(bez) }
+                        is Quadratic -> Cubic().apply{ setQuadratic(bez) }
+                        is Cubic -> bez
+                    }
+                    val c2 = when (val bez = curve) {
+                        is Linear -> Cubic().apply{ setLinear(bez) }
+                        is Quadratic -> Cubic().apply{ setQuadratic(bez) }
+                        is Cubic -> bez
+                    }
+
+                    val diff = Cubic(
+                        c1.sx - c2.sx,
+                        c1.sy - c2.sy,
+                        c1.ax - c2.ax,
+                        c1.ay - c2.ay,
+                        c1.bx - c2.bx,
+                        c1.by - c2.by,
+                        c1.ex - c2.ex,
+                        c1.ey - c2.ey
+                    )
+
+                    drawCub(ctx, SOLID+RED, diff)
                 }
             }
         }
